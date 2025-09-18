@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: adm_backend
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: su08084
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Django DB settings used by your settings.py
+      - DB_NAME=adm_backend
+      - DB_USER=postgres
+      - DB_PASSWORD=su08084
+      - DB_HOST=db
+      - DB_PORT=5432
+      # Optional: Django settings
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    entrypoint: ["/app/entrypoint.sh"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    command: yarn dev --host 0.0.0.0 --port 5173 --strictPort
+    depends_on:
+      - backend
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  pg_data:
