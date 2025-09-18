@@ -1,6 +1,6 @@
 git clone git@github.com:Aslam997/adm_global.git
 
-cd adm_project
+cd adm_global
 
 docker compose build
 
